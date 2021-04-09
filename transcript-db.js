@@ -57,15 +57,33 @@ function ExamList() {
     });
   };
 
+  
   this.find = (code) => {
-    const sql = 'SELECT * FROM course JOIN score ON course.code=score.coursecode WHERE score.coursecode=?';
-    db.get(sql, [code], (err, row) => {
-      if (err)
-        reject(err);
-      else
-        resolve(new Exam(row.code, row.name, row.CFU, row.datepassed, row.score, ((row.laude) ? true : false)))
+    return new Promise((resolve, reject) => {
+      const sql = 'SELECT * FROM course LEFT JOIN score ON course.code=score.coursecode WHERE score.coursecode=?';
+      db.get(sql, [code], (err, row) => {
+        if (err)
+          reject(err);
+        else
+          resolve(new Exam(row.code, row.name, row.CFU, row.datepassed, row.score, ((row.laude) ? true : false)))
+      });
     });
   };
+
+  // ALTERNATIVE 
+  /*
+  this.find = async (codice) => {
+    const exams = await this.getAll();
+    return exams.filter( (course) => {
+        for (let e of exams){
+            if (e.code == codice){
+              return e;
+            }
+        }
+    });
+      
+  };
+  */
 
   this.afterDate = (date) => {
     return new Promise((resolve, reject) => {
@@ -88,8 +106,9 @@ function ExamList() {
   }; */
 
   this.getWorst = async (num) => {
-    const exams = await this.getAll();
-    return exams.sort((a,b) => a.score - b.score).splice(0, num);
+    let exams = await this.getAll();
+    exams = exams.sort((a,b) => a.score - b.score);
+    return exams.splice(0,num);
   };
 
 };
@@ -105,7 +124,9 @@ const main = async () => {
   const ds = new Exam('01SQJOV', 'Data Science and Database Technology', 8, '2021-07-02', 28);
   const myNewExams = [wa1, sec, ds];
 
-  // calling some methods -- insert the 3 new exams
+  // calling some methods----------------------------------------------------------------------------------
+  
+  //insert the new exams
   for(const exam of myNewExams) {
     try {
       const result = await examList.add(exam);
@@ -122,6 +143,10 @@ const main = async () => {
   // get the 2 worst Exams
   const worstExams = await examList.getWorst(2);
   console.log('Worst 2 exams: ' + worstExams);
+
+  const c = await examList.find("02LSEOV");
+  console.log('\nTrovato: ' + c.toString());
+
 }
 
 main();
